@@ -6,8 +6,7 @@
 declare -a options
 declare bitrate
 declare name
-declare password
-declare username
+declare refresh_token
 declare autoplay
 declare initial_volume
 
@@ -24,15 +23,15 @@ options+=(--initial-volume "$initial_volume")
 name=$(bashio::config 'name')
 options+=(--name "${name}")
 
-# Username / password
-if bashio::config.has_value 'username'; then
-    bashio::config.require.password
-
-    username=$(bashio::config 'username')
-    password=$(bashio::config 'password')
-
-    options+=(--username "${username}")
-    options+=(--password "${password}")
+if bashio::config.has_value 'refresh_token'; then
+    refresh_token=$(bashio::config 'refresh_token')
+    
+    # Используем --backend-settings для передачи токена librespot
+    # librespot использует refresh token для получения access token
+    # Формат: --backend-settings spotify_token:REFRESH_TOKEN
+    options+=(--access-token "${refresh_token}")
+    
+    bashio::log.info 'Using OAuth Refresh Token for authentication.'
 fi
 
 # Autoplay
