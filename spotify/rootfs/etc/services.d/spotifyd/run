@@ -29,6 +29,8 @@ if bashio::config.has_value 'refresh_token'; then
     # Используем --backend-settings для передачи токена librespot
     # librespot использует refresh token для получения access token
     # Формат: --backend-settings spotify_token:REFRESH_TOKEN
+    options+=(--enable-oauth)
+
     options+=(--access-token "${refresh_token}")
     
     bashio::log.info 'Using OAuth Refresh Token for authentication.'
