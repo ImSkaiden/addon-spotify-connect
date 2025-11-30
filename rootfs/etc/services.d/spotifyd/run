@@ -31,7 +31,7 @@ if bashio::config.true 'oauth_enabled'; then
     # Формат: --backend-settings spotify_token:REFRESH_TOKEN
     options+=(--enable-oauth)
     options+=(--oauth-port 5588)
-    options+=(--cache "/data/")
+    options+=(--cache "/config")
 
     
     bashio::log.info 'Using OAuth for authentication.'
