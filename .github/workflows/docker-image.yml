@@ -1,18 +1,56 @@
-name: Docker Image CI
+name: Docker Build and Push (Spotify AARCH64)
 
+# Запускать этот процесс при каждом коммите (push) в ветку main
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  # Дополнительно позволяет запускать вручную из вкладки Actions
+  workflow_dispatch:
 
 jobs:
-
-  build:
-
+  build-aarch64:
+    # Запускать на стандартном Linux-раннере
     runs-on: ubuntu-latest
-
+    
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag spotify:$(date +%s)
+      # 1. Загрузка кода
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # 2. Настройка QEMU (позволяет эмулировать ARM64)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # 3. Настройка Buildx (инструмент для надежной сборки)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 4. Вход в Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          # Используем секреты, созданные на Шаге A
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          
+      # 5. Определение тегов и платформы
+      - name: Define Image Tags and Platform
+        id: image_info
+        run: |
+          # Имя образа в Docker Hub
+          IMAGE_TAG="imskaiden/spotify-aarch64"
+          # Список тегов для публикации (текущий коммит + 'latest')
+          echo "TAGS=${IMAGE_TAG}:${{ github.sha }},${IMAGE_TAG}:latest" >> $GITHUB_OUTPUT
+          # Целевая архитектура - ARM64
+          echo "PLATFORMS=linux/arm64" >> $GITHUB_OUTPUT
+      
+      # 6. Сборка и публикация образа
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: . # Исходники берутся из текущего каталога
+          push: true # Указываем, что нужно опубликовать образ
+          # Собираем только для ARM64, как было в исходной команде
+          platforms: ${{ steps.image_info.outputs.PLATFORMS }}
+          # Публикуем с тегами SHA и latest
+          tags: ${{ steps.image_info.outputs.TAGS }}
